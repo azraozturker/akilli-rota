@@ -31,4 +31,3 @@ def xte_simulasyonu(y0, V=20.0, ruzgar=0.0, wn=0.5, zeta=1.0, roll_limit=30.0, d
         y += y_hizi * dt #güncelleme
     return kayit
 
-print(roll_komutu(15,0.0))
