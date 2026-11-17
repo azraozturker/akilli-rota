@@ -6,6 +6,27 @@ import streamlit as st
 
 from rota.yaklasma import yaklasma_simulasyonu
 from rota.xte import roll_komutu, xte_simulasyonu
+import math
+
+from rota.planlama import engel_haritasi, astar, rota_uzunlugu
+from rota.sadelestirme import douglas_peucker
+from main import HUCRE, rotayi_takip_et
+ENGELLER = [(15, 15), (20, 22), (25, 25), (30, 28),
+            (35, 35), (25, 10), (10, 30)]
+BASLANGIC, HEDEF = (2, 2), (47, 47)
+
+
+def engele_en_yakin(noktalar, engeller, adim=50):
+    """Cizgi parcalari uzerinde engellere en yakin mesafe."""
+    en_yakin = float("inf")
+    for (ax, ay), (bx, by) in zip(noktalar, noktalar[1:]):
+        for i in range(adim + 1):
+            x = ax + (bx - ax) * i / adim
+            y = ay + (by - ay) * i / adim
+            for ex, ey in engeller:
+                mesafe = math.dist((x, y), (ex, ey))
+                en_yakin = min(en_yakin, mesafe)
+    return en_yakin
 
 st.set_page_config(page_title="Akıllı Rota", layout="wide")
 
@@ -19,7 +40,92 @@ st.write(
 rota_sekmesi, kontrol_sekmesi = st.tabs(["Rota", "Kontrol"])
 
 with rota_sekmesi:
-    st.info("Bu sekme hazırlanıyor.")
+    st.header("8.1 A* ve 8.4 Douglas-Peucker")
+    sol, sag = st.columns([1, 2])
+
+    with sol:
+        guvenlik = st.slider("Güvenlik payı (hücre)",
+                             1.0, 5.0, 3.0, 0.5)
+        epsilon = st.slider("Epsilon (hücre)", 0.0, 4.0, 1.0, 0.25)
+
+    kapali = engel_haritasi(50, 50, ENGELLER, guvenlik)
+    rota = astar(BASLANGIC, HEDEF, kapali, 50, 50)
+
+    if rota is None:
+        st.error("Bu güvenlik payıyla başlangıçtan hedefe yol yok.")
+    else:
+        sade = douglas_peucker(rota, epsilon)
+        yakin = engele_en_yakin(sade, ENGELLER)
+
+        with sol:
+            st.metric("A* rotası", f"{len(rota)} nokta")
+            st.metric("Rota uzunluğu",
+                      f"{rota_uzunlugu(rota):.1f} hücre")
+            st.metric("Sade rota", f"{len(sade)} nokta")
+            st.metric("Engele en yakın", f"{yakin:.2f} hücre")
+            if yakin < guvenlik:
+                st.warning("Sade rota güvenlik bölgesine giriyor. "
+                           "Epsilon'u küçültün.")
+
+        with sag:
+            fig, ax = plt.subplots(figsize=(6, 6))
+            ax.scatter(*zip(*kapali), s=8, color="lightgray",
+                       label="Güvenlik bölgesi")
+            ax.scatter(*zip(*ENGELLER), color="red", marker="x",
+                       label="Engel")
+            ax.plot(*zip(*rota), color="orange",
+                    label=f"A* ({len(rota)} nokta)")
+            ax.plot(*zip(*sade), "o--", color="blue",
+                    label=f"Sade ({len(sade)} nokta)")
+            ax.set_xlabel("X")
+            ax.set_ylabel("Y")
+            ax.set_aspect("equal")
+            ax.grid(True)
+            ax.legend(loc="upper left")
+            st.pyplot(fig)
+            plt.close(fig)
+
+        st.divider()
+        st.header("Senaryo: rüzgâr altında uçuş")
+        sol2, sag2 = st.columns([1, 2])
+
+        with sol2:
+            ruzgar_x = st.slider("Rüzgâr x (m/s)",
+                                 -8.0, 8.0, -4.0, 0.5)
+            ruzgar_y = st.slider("Rüzgâr y (m/s)",
+                                 -8.0, 8.0, 3.0, 0.5)
+
+        sade_m = [(x * HUCRE, y * HUCRE) for x, y in sade]
+        iz, sapmalar = rotayi_takip_et(
+            sade_m, ruzgar=(ruzgar_x, ruzgar_y))
+        engeller_m = [(x * HUCRE, y * HUCRE) for x, y in ENGELLER]
+        ucus_yakin = min(math.dist(p, e)
+                         for p in iz for e in engeller_m)
+
+        with sol2:
+            en_buyuk = max(abs(s) for s in sapmalar)
+            st.metric("En büyük sapma", f"{en_buyuk:.1f} m")
+            st.metric("Uçuş süresi",
+                      f"{len(sapmalar) * 0.05:.0f} s")
+            st.metric("Engele en yakın", f"{ucus_yakin:.0f} m")
+            if ucus_yakin < guvenlik * HUCRE:
+                st.warning("Uçuş izi güvenlik bölgesine giriyor.")
+
+        with sag2:
+            fig, ax = plt.subplots(figsize=(6, 6))
+            ax.scatter([x * HUCRE for x, y in kapali],
+                       [y * HUCRE for x, y in kapali],
+                       s=6, color="lightgray")
+            ax.plot(*zip(*sade_m), "o--", color="blue",
+                    label="Sade rota")
+            ax.plot(*zip(*iz), color="green", label="Uçuş izi")
+            ax.set_xlabel("X (m)")
+            ax.set_ylabel("Y (m)")
+            ax.set_aspect("equal")
+            ax.grid(True)
+            ax.legend(loc="upper left")
+            st.pyplot(fig)
+            plt.close(fig)
 
 with kontrol_sekmesi:
     st.header("8.2 Hareketli hedefe yaklaşma")
