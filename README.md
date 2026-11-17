@@ -2,7 +2,7 @@
 
 Çelebi İHA takımı Temel Git ve GitHub Eğitimi, **Proje 8**.
 
-Bu projede bir İHA'nın görev rotası dört adımda ele alındı: engellerden kaçan bir rota bulmak, rotayı sadeleştirmek, aracın rotayı rüzgâr altında sapmadan uçmasını sağlamak ve hareketli bir hedefe güvenli şekilde yaklaşmak. Her adım ayrı bir modülde yazıldı, sonra `main.py` içinde tek bir senaryoda birleştirildi. Proje iki kişiyle, her görev ayrı bir branch'te ve karşılıklı kod incelemesiyle geliştirildi.
+Bu projede bir İHA'nın görev rotası dört adımda ele alındı: engellerden kaçan bir rota bulmak, rotayı sadeleştirmek, aracın rotayı rüzgâr altında sapmadan uçmasını sağlamak ve hareketli bir hedefe güvenli şekilde yaklaşmak. Her adım ayrı bir modülde yazıldı, sonra `main.py` içinde tek bir senaryoda birleştirildi. Parametreleri kaydırıcılarla değiştirilebilen bir Streamlit sitesi de var. Proje iki kişiyle, her görev ayrı bir branch'te ve karşılıklı kod incelemesiyle geliştirildi.
 
 ![Dört parça tek senaryoda](gorseller/senaryo.png)
 
@@ -15,6 +15,7 @@ Bu projede bir İHA'nın görev rotası dört adımda ele alındı: engellerden 
 - [8.2 Hareketli hedefe yaklaşma](#82-hareketli-hedefe-yaklaşma)
 - [8.3 Rota sapma (XTE) düzeltmesi](#83-rota-sapma-xte-düzeltmesi)
 - [Entegrasyon](#entegrasyon)
+- [Arayüz (Streamlit sitesi)](#arayüz-streamlit-sitesi)
 - [Nasıl çalıştırılır?](#nasıl-çalıştırılır)
 - [Nasıl çalıştık?](#nasıl-çalıştık)
 
@@ -25,7 +26,7 @@ Bu projede bir İHA'nın görev rotası dört adımda ele alındı: engellerden 
 | Kişi | Sorumlu olduğu kısımlar | Dosyalar |
 | --- | --- | --- |
 | **Azra Öztürker** ([@azraozturker](https://github.com/azraozturker)) | Repo ve proje iskeleti · 8.1 A* · A* testleri · 8.4 Douglas-Peucker · Entegrasyon ve `RotaPlanlayici` sınıfı | `rota/planlama.py`, `rota/sadelestirme.py`, `test_planlama.py`, `main.py` |
-| **İclal Öztürk** ([@iclalozturk61](https://github.com/iclalozturk61)) | 8.2 Hareketli hedefe yaklaşma · 8.3 XTE ve roll komutu · Sapma–roll tablosu ve XTE grafikleri · `.gitignore` düzenlemesi | `rota/yaklasma.py`, `rota/xte.py`, `.gitignore` |
+| **İclal Öztürk** ([@iclalozturk61](https://github.com/iclalozturk61)) | 8.2 Hareketli hedefe yaklaşma · 8.3 XTE ve roll komutu · Sapma–roll tablosu ve XTE grafikleri · `.gitignore` düzenlemesi · README · Streamlit sitesi | `rota/yaklasma.py`, `rota/xte.py`, `.gitignore`, `README.md`, `app.py` |
 
 Her parçanın kim tarafından yazıldığı ve kimin incelediği:
 
@@ -40,14 +41,17 @@ Her parçanın kim tarafından yazıldığı ve kimin incelediği:
 | A* testleri | `feature/astar-testler` | #15 | Azra | İclal |
 | Sapma–roll tablosu ve grafikler | `feature/xte-roll` | #16 | İclal | Azra |
 | Entegrasyon | `feature/entegrasyon` | #17 | Azra | İclal |
+| README | `docs/readme` | #21 | İclal | Azra |
+| Streamlit sitesi | `feature/streamlit` | #22 | İclal | Azra |
 
 ## Proje yapısı
 
 ```
 akilli-rota/
 ├── main.py              # Entegrasyon: RotaPlanlayici sınıfı ve uçuş simülasyonu   (Azra)
+├── app.py               # Streamlit sitesi                                       (İclal)
 ├── test_planlama.py     # A* testleri                                            (Azra)
-├── requirements.txt     # Gerekli paket: matplotlib
+├── requirements.txt     # Gerekli paketler: matplotlib, streamlit
 ├── gorseller/           # Programların ürettiği grafikler
 └── rota/
     ├── planlama.py      # 8.1 A* ile rota planlama                               (Azra)
@@ -190,6 +194,19 @@ Uçuşu `rotayi_takip_et` fonksiyonu simüle ediyor: araç sade rotanın her dü
 
 Sapma grafiğindeki dört sıçrama dönüş noktaları; düz yollarda sapma rüzgâra rağmen sıfırda kalıyor. Araç dönüşlerde bile güvenlik bölgesinin dışında kalıyor. Yani dört parça birlikte doğru çalışıyor.
 
+## Arayüz (Streamlit sitesi)
+
+**Yazan:** İclal · **Dosya:** `app.py` · **PR:** #22
+
+Projenin dört parçası, tarayıcıda açılan bir sitede de çalışıyor. `streamlit run app.py` komutuyla açılır. Kaydırıcı her oynatıldığında simülasyon yeniden çalışıyor ve grafikler anında güncelleniyor. Site, modüllerdeki fonksiyonları doğrudan kullanıyor; `rota/` dosyaları ve `main.py` değişmedi.
+
+| Sekme | Kaydırıcılar | Gösterilenler |
+| --- | --- | --- |
+| Rota | Güvenlik payı, epsilon, rüzgâr (x ve y) | A* ve sade rota, rota uzunluğu, engele en yakın mesafe; rüzgârlı uçuş izi, en büyük sapma ve uçuş süresi. Sade rota ya da uçuş izi güvenlik bölgesine girerse uyarı verir |
+| Kontrol | k, hedef hızı, en yüksek hız · başlangıç sapması, yan rüzgâr, wn | Yaklaşma mesafe ve hız grafikleri, en büyük yavaşlama · Sapma ve roll grafikleri, ilk roll komutu, rotaya oturma süresi |
+
+Site sayesinde README'deki parametre seçimleri canlı görülebiliyor: epsilon 2.0'a çekildiğinde rotanın güvenlik bölgesine girdiği, k büyüdükçe frenin sertleştiği, wn küçüldükçe sapma düzeltmesinin yumuşayıp uzadığı doğrudan izleniyor.
+
 ## Nasıl çalıştırılır?
 
 ```bash
@@ -200,6 +217,7 @@ python -m pip install -r requirements.txt
 
 | Komut | Ne yapar |
 | --- | --- |
+| `streamlit run app.py` | Siteyi tarayıcıda açar (`localhost:8501`) |
 | `python main.py` | Bütün senaryoyu çalıştırır, `gorseller/senaryo.png` grafiğini üretir |
 | `python test_planlama.py` | A* testlerini çalıştırır |
 | `python rota/planlama.py` | A* rotası grafiği |
