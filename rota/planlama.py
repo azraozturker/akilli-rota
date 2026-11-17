@@ -54,3 +54,27 @@ def rota_uzunlugu(rota):
         toplam += math.dist(rota[i], rota[i + 1])
     return toplam
 
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    GENISLIK, YUKSEKLIK = 50, 50
+    ENGELLER = [(15, 15), (20, 22), (25, 25), (30, 28),
+                (35, 35), (25, 10), (10, 30)]
+    kapali = engel_haritasi(GENISLIK, YUKSEKLIK, ENGELLER)
+    rota = astar((2, 2), (47, 47), kapali, GENISLIK, YUKSEKLIK)
+    print("Nokta sayisi:", len(rota))
+    print("Uzunluk:", round(rota_uzunlugu(rota), 1))
+
+    plt.figure(figsize=(6, 6))
+    plt.scatter(*zip(*kapali), s=8, color="lightgray", label="Guvenlik bolgesi")
+    plt.scatter(*zip(*ENGELLER), color="red", marker="x", label="Engel")
+    plt.plot(*zip(*rota), color="blue", label="A* rotasi")
+    plt.scatter([2, 47], [2, 47], color="green", zorder=3, label="Baslangic / bitis")
+    plt.xlabel("X")
+    plt.ylabel("Y")
+    plt.legend()
+    plt.axis("equal")
+    plt.grid(True)
+    plt.savefig("gorseller/astar.png", dpi=150)
+    plt.show()
+
