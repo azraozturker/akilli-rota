@@ -31,3 +31,31 @@ def xte_simulasyonu(y0, V=20.0, ruzgar=0.0, wn=0.5, zeta=1.0, roll_limit=30.0, d
         y += y_hizi * dt #güncelleme
     return kayit
 
+
+if __name__ == "__main__":
+    import matplotlib.pyplot as plt
+
+    print("Sapma (m) -> ilk roll (derece)")
+    for sapma in [5, 10, 15, 30, 50]:
+        print(sapma, "->", round(roll_komutu(sapma, 0.0), 1)) #sonucu ondalığı yuvarlayarak yazıyo
+
+    fig, (ust, alt) = plt.subplots(2, 1, figsize=(8, 6), sharex=True) #grafik ayarları
+    for sapma in [5, 15, 30]:
+        t, y, roll = zip(*xte_simulasyonu(sapma)) #yaklasmadakiyle aynı iş ama farklı bir değişkene atamıyor
+        ust.plot(t, y, label=f"Baslangic sapmasi {sapma} m")
+        alt.plot(t, roll, label=f"{sapma} m")
+    t, y, roll = zip(*xte_simulasyonu(0.0, ruzgar=5.0)) #rüzgarlı çizim için tablodan atama
+
+    ust.plot(t, y, linestyle="--", label="Sapma yok, 5 m/s yan ruzgar")
+    alt.plot(t, roll, linestyle="--", label="5 m/s yan ruzgar")
+    
+    ust.set_ylabel("XTE (m)") #grafik ayarları...
+    ust.legend()
+    ust.grid(True)
+    alt.set_ylabel("Roll (derece)")
+    alt.set_xlabel("Zaman (s)")
+    alt.grid(True)
+    plt.tight_layout()
+    plt.savefig("gorseller/xte.png", dpi=150)
+    plt.show()
+
